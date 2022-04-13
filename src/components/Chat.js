@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 import { Avatar } from "@material-ui/core";
 import getReceipientEmail from "../utils/getReceipientEmail";
@@ -6,6 +6,8 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { auth, db } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { selectedId, chatUsers, showChatScreen } from "../actions/actions_index";
+import { useSelector, useDispatch } from "react-redux";
 
 function Chat({ id, users }) {
   const [user] = useAuthState(auth);
@@ -15,17 +17,32 @@ function Chat({ id, users }) {
 
   const receipient = receipientSnapshot?.docs?.[0]?.data();
 
-  console.log(receipient);
+  // console.log(receipient);
 
   const receipientEmail = getReceipientEmail(users, user);
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const state = useSelector((state) => state);
+
   const enterChat = () => {
-    navigate(`/chat/${id}`);
+      localStorage.setItem("id", JSON.stringify(id));
+      localStorage.setItem("users", JSON.stringify(users));
+
+      dispatch(selectedId(id));
+      dispatch(chatUsers(users));
+      dispatch(showChatScreen());
+      console.log(users);
+      console.log(state);
+    
   };
 
+  // useEffect(() => {
+  // }, []);
+
   return (
-    <Container onClick={enterChat}>
+    <Container id="chat-container" onClick={() => enterChat()}>
       {receipient ? (
         <UserAvatar src={receipient?.photoURL} />
       ) : (

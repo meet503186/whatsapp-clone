@@ -1,18 +1,46 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { auth, db, firebase } from "../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useNavigate } from "react-router-dom";
 import { Avatar, IconButton } from "@material-ui/core";
-import { AttachFile, MoreVert, InsertEmoticon, Mic } from "@material-ui/icons";
+import {
+  AttachFile,
+  MoreVert,
+  InsertEmoticon,
+  Mic,
+  ArrowBack,
+} from "@material-ui/icons";
 import { useCollection } from "react-firebase-hooks/firestore";
 import Message from "./Message";
 import getReceipientEmail from "../utils/getReceipientEmail";
 import TimeAgo from "timeago-react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import useWindowSize from "../useWindowSize";
+import { hideChatScreen, showChatScreen } from "../actions/actions_index";
 
-function ChatScreen({ chat, messages, id }) {
+function ChatScreen({ id, users }) {
   const [user] = useAuthState(auth);
   const [input, setInput] = useState("");
+  const endOfMessagesRef = useRef(null);
+
+  const width = useWindowSize().width;
+
+  const dispatch = useDispatch();
+  // const id = useParams().id;
+  // const users = useParams().users;
+  // const id = JSON.parse(localStorage.getItem("id"));
+  // const users = JSON.parse(localStorage.getItem("users"));
+
+  // console.log("chat screen :- " + users);
+  // const id = useSelector((state) => state.idReducer);
+  // const users = useSelector((state) => state.chatUsersReducer);
+
+  console.log("users :- " + users);
+
+  // const chat = JSON.parse(localStorage.getItem("chat"));
+  // const messages = JSON.parse(localStorage.getItem("messages"));
 
   const [messagesSnapshot] = useCollection(
     db
@@ -34,19 +62,19 @@ function ChatScreen({ chat, messages, id }) {
           }}
         />
       ));
-    } else {
-      return messages.map((message) => (
-        <Message key={message.id} user={message.user} message={message} />
-      ));
     }
+    //  else {
+    //   return messages.map((message) => (
+    //     <Message key={message.id} user={message.user} message={message} />
+    //   ));
+    // }
   };
 
-  console.log(chat)
+  // console.log("chat in chat screen :-" + chat);
+  // console.log("messages in chat screen :- " + messages)
 
   const [receipientSnapshot] = useCollection(
-    db
-      .collection("users")
-      .where("email", "==", getReceipientEmail(chat.users, user))
+    db.collection("users").where("email", "==", getReceipientEmail(users, user))
   );
 
   const sendMessage = (e) => {
@@ -68,31 +96,78 @@ function ChatScreen({ chat, messages, id }) {
     });
 
     setInput("");
+    ScrollToBottom();
   };
 
-  const receipient = receipientSnapshot?.docs?.[0].data();
-  const receipientEmail = getReceipientEmail(chat.users, user);
+  const receipient = receipientSnapshot?.docs?.[0]?.data();
+
+  const receipientEmail = getReceipientEmail(users, user);
+
+  // useEffect(() => {
+  //   setReceipientEmail(getReceipientEmail(chat.users, user));
+  // }, [chat, messages, id]);
+
+  console.log(receipientEmail);
+
+  const ScrollToBottom = () => {
+    endOfMessagesRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    })
+  }
 
   return (
     <Container>
       <Header>
-          {receipient ? (
-              <Avatar src={receipient?.photoURL} />
-              )
-              : 
-              <Avatar>{receipientEmail[0]}</Avatar>
+        {width <= 800 ? (
+          <IconButton onClick={() => dispatch(hideChatScreen())}>
+            <ArrowBack />
+          </IconButton>
+        ) : null}
+        {receipient ? (
+          <Avatar src={receipient?.photoURL} />
+        ) : (
+          <Avatar>{receipientEmail[0]}</Avatar>
+        )}
+        <HeaderInformation
+          style={
+            width <= 400
+              ? { width: "50%", overflow: "hidden", whiteSpace: "nowrap" }
+              : { width: "auto" }
           }
-        <HeaderInformation>
-          <h3>{receipientEmail}</h3>
-          {receipientSnapshot ?   
-          (<p>Last Seen: {' '}
-          {receipient?.lastSeen?.toDate() ? 
-          (<TimeAgo datetime={receipient?.lastSeen?.toDate()} />)
-          : "Unavailable"
-          }
-          </p>)
-        : <p>Loading Last active...</p>
-      }
+        >
+          <h3
+            style={
+              width <= 400
+                ? {
+                    fontSize: "15px",
+                    margin: "auto",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }
+                : { fontSize: "20px" }
+            }
+          >
+            {receipientEmail}
+          </h3>
+          {receipientSnapshot ? (
+            <p
+              style={
+                width <= 400
+                  ? { overflow: "hidden", textOverflow: "ellipsis" }
+                  : null
+              }
+            >
+              Last Seen:{" "}
+              {receipient?.lastSeen?.toDate() ? (
+                <TimeAgo datetime={receipient?.lastSeen?.toDate()} />
+              ) : (
+                "Unavailable"
+              )}
+            </p>
+          ) : (
+            <p>Loading Last active...</p>
+          )}
         </HeaderInformation>
         <HeaderIcons>
           <IconButton>
@@ -105,13 +180,13 @@ function ChatScreen({ chat, messages, id }) {
       </Header>
       <MessageContainer>
         {showMessages()}
-        <EndOfMessage />
+        <EndOfMessage ref={endOfMessagesRef} />
       </MessageContainer>
 
       <InputContainer>
         <InsertEmoticon />
         <Input value={input} onChange={(e) => setInput(e.target.value)} />
-        <button hidden disabled={!input} type="submit" onClick={sendMessage}>
+        <button hidden disabled={!input} onClick={sendMessage} type="submit">
           Send Message
         </button>
         <Mic />
@@ -153,7 +228,9 @@ const MessageContainer = styled.div`
   background-color: #e5ded8;
   min-height: 90vh;
 `;
-const EndOfMessage = styled.div``;
+const EndOfMessage = styled.div`
+  margin-bottom: 50px;
+`;
 const InputContainer = styled.form`
   display: flex;
   align-items: center;

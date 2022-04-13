@@ -11,7 +11,7 @@ import { auth, db } from "../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useCollection } from "react-firebase-hooks/firestore";
 
-function Sidebar(props) {
+function Sidebar({ width }) {
   const [user] = useAuthState(auth);
   const userChatRef = db
     .collection("chats")
@@ -54,7 +54,35 @@ function Sidebar(props) {
       (chat) =>
         chat.data().users.find((user) => user === receipientEmail)?.length > 0
     );
-  return (
+  return width <= 800 ? (
+    <MobileViewContainer>
+      <Header>
+        <UserAvatar src={user.photoURL} onClick={() => auth.signOut()} />
+
+        <IconsContainer>
+          <IconButton>
+            <ChatIcon />
+          </IconButton>
+          <IconButton>
+            <MoreVert />
+          </IconButton>
+        </IconsContainer>
+      </Header>
+
+      <Search>
+        <SearchIcon />
+        <SearchInput placeholder="Search in chats" />
+      </Search>
+
+      <SidebarButton onClick={createChat}>Start a new chat</SidebarButton>
+
+      {/* List of chats */}
+
+      {chatsSnapshot?.docs.map((chat) => (
+        <Chat key={chat.id} id={chat.id} users={chat.data().users} />
+      ))}
+    </MobileViewContainer>
+  ) : (
     <Container>
       <Header>
         <UserAvatar src={user.photoURL} onClick={() => auth.signOut()} />
@@ -87,6 +115,21 @@ function Sidebar(props) {
 
 export default Sidebar;
 
+const MobileViewContainer = styled.div`
+  display: flex;
+  border-right: 1px solid whitesmoke;
+  height: 100vh;
+  width: 100%;
+  flex-direction: column;
+  overflow-y: scroll;
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+`;
+
 const Container = styled.div`
   flex: 0.45;
   border-right: 1px solid whitesmoke;
@@ -101,7 +144,6 @@ const Container = styled.div`
   -ms-overflow-style: none;
   scrollbar-width: none;
 `;
-
 const Header = styled.div`
   display: flex;
   position: sticky;
