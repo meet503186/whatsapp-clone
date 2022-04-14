@@ -118,7 +118,7 @@ export default Sidebar;
 const MobileViewContainer = styled.div`
   display: flex;
   border-right: 1px solid whitesmoke;
-  height: 100vh;
+  height: 100%;
   width: 100%;
   flex-direction: column;
   overflow-y: scroll;
@@ -133,7 +133,7 @@ const MobileViewContainer = styled.div`
 const Container = styled.div`
   flex: 0.45;
   border-right: 1px solid whitesmoke;
-  height: 100vh;
+  height: 100%;
   min-width: 300px;
   max-width: 350px;
   overflow-y: scroll;

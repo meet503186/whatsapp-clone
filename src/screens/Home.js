@@ -9,6 +9,7 @@ function Home(props) {
   document.title = "WhatsApp 2.0";
 
   const width = useWindowSize().width;
+  const height = useWindowSize().height;
 
   const id = useSelector((state) => state.idReducer);
   const users = useSelector((state) => state.chatUsersReducer);
@@ -19,9 +20,8 @@ function Home(props) {
 
   console.log("home :- " + isChatScreen);
 
-  const mobileView = 800;
   return (
-    <Container>
+    <Container style={{ height: height}}>
       {width <= 800 && isChatScreen ? null : <Sidebar width={width} />}
       <ChatContainer>
         {isChatScreen ? <ChatScreen id={id} users={users} /> : null}
